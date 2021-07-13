@@ -1,65 +1,61 @@
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from 'next/router';
-import { Title } from '@/styles/pages/Home';
 
-interface IProduct {
-   id: string;
-   title: string;
-   slug: string;
-}
+import { client } from "@/lib/prismic";
+import { Document } from  'prismic-javascript/types/documents'
+import PrismicDOM from 'prismic-dom';
+
+// import { Title } from '@/styles/pages/Home';
 
 interface IProductProps {
-   products: IProduct[];
+   product: Document;
 }
 
-export default function LazyLoad({ products }: IProductProps) {
+export default function Product({ product }: IProductProps ) {
    const router = useRouter();
+
+   if (router.isFallback) {
+      return <p>Loading...</p>
+   }
 
    return (
       <div>
-         <Title>Static Site Generation with Next.js - getStaticPaths and Fallback: false</Title>
+         {/* <h1>{router.query.slug}</h1> */}
+         <h1>
+            {PrismicDOM.RichText.asText(product.data.title)}
+         </h1>
 
-         <h1>{router.query.slug}</h1>
+         <img src={product.data.thumbnail.url} width="300" alt={product.data.title} />
 
-         <ul>
-            {products.map(product => {
-               return (
-               <li key={product.id}>
-                  {product.title}
-               </li>
-               );
-            })}
-         </ul>
+         {/* transforma texto em HTML */}
+         <div dangerouslySetInnerHTML={{ __html: PrismicDOM.RichText.asText(product.data.description) }}></div>
+
+         <p>Price: ${product.data.price}</p>
       </div>
    );
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`);
-   const products = await response.json();
+   // E-commerce têm muitas páginas, portanto não geramos todas de forma estática.
+   // Para resolver isso: 
 
-   const paths = products.map(product => {
-      return {
-         params: { slug: product.slug }
-      }
-   })
-
+   // fallback: true --> gera uma nova página estática para cada nova url acessada.
+   // fallback: false -> retorna erro 404 para url não encontrada.
    return {
-      paths,
-      fallback: false,
+      paths: [],
+      fallback: true,
    }
 }
 
 export const getStaticProps: GetStaticProps<IProductProps> = async (context) => {
    const { slug } = context.params;
 
-   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products?slug=${slug}`);
-   const products = await response.json();
+   const product = await client().getByUID('product', String(slug), {});
 
    return {
       props: {
-         products,
+         product,
       },
-      revalidate: 60,
+      revalidate: 5,
    }
 }

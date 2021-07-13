@@ -11,10 +11,10 @@ import SEO from '@/components/SEO';
 
 
 interface IHomeProps {
-  recommendedProducts: Document[];
+  search: Document[];
 }
 
-export default function Home({ recommendedProducts }: IHomeProps) {
+export default function Search({ search }: IHomeProps) {
   return (
     <DivPage>
       <SEO 
@@ -26,7 +26,7 @@ export default function Home({ recommendedProducts }: IHomeProps) {
       <section>
           <h1>Products List</h1>
           <ul>
-            {recommendedProducts.map(recommendedProduct => {
+            {search.map(recommendedProduct => {
               return (
                 <li key={recommendedProduct.id}>
                   <Link href={`/catalog/products/${recommendedProduct.uid}`}>
@@ -50,7 +50,7 @@ export const getServerSideProps: GetServerSideProps<IHomeProps> = async () => {
 
    return {
       props: {
-         recommendedProducts: recommendedProducts.results
+         search: recommendedProducts.results
       }
    }
 } 
