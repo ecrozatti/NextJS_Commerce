@@ -1,44 +1,56 @@
+import { GetServerSideProps } from 'next';
 import Link from 'next/link';
-import { Title, DivPage, Button } from '@/styles/pages/Home';
+import { client } from '@/lib/prismic';
 
+import Prismic from 'prismic-javascript';
+import { Document } from 'prismic-javascript/types/documents';
+import PrismicDOM from 'prismic-dom';
+
+import { Title, DivPage, Button } from '@/styles/pages/Home';
 import SEO from '@/components/SEO';
 
-export default function Home() {
+
+interface IHomeProps {
+  recommendedProducts: Document[];
+}
+
+export default function Home({ recommendedProducts }: IHomeProps) {
   return (
     <DivPage>
-        <SEO 
-          title="Home" 
-          shouldExcludeTitleSuffix={false}
-        />
+      <SEO 
+        title="NestJS-Commerce, your best e-commerce" 
+        image="image.png"
+        shouldExcludeTitleSuffix={false}
+      />
 
-        <Title>Next.js Data Fetching</Title>
-        
-        <Link href="/client-side-fetching">
-          <Button>Client Side Fetching</Button>
-        </Link>
-
-        <Link href="/server-side-rendering">
-          <Button>Server Side Rendering</Button>
-        </Link>
-
-        <Link href="/static-site-generation">
-          <Button>Static Site Generation</Button>
-        </Link>
-
-        <Title>Extras</Title>
-
-        <Link href="/dynamic-import-lib">
-          <Button>Dynamic Import Lib</Button>
-        </Link>
-
-        <Link href="/lazy-load">
-          <Button>Lazy Load</Button>
-        </Link>
-
-        <Link href="/invalid-url">
-          <Button>Custom 404 Error</Button>
-        </Link>
-
+      <section>
+          <h1>Products List</h1>
+          <ul>
+            {recommendedProducts.map(recommendedProduct => {
+              return (
+                <li key={recommendedProduct.id}>
+                  <Link href={`/catalog/products/${recommendedProduct.uid}`}>
+                     <a>
+                        {PrismicDOM.RichText.asText(recommendedProduct.data.title)}
+                     </a>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>  
+      </section>
     </DivPage>
   )
 }
+
+export const getServerSideProps: GetServerSideProps<IHomeProps> = async () => {
+  const recommendedProducts = client().query([
+    Prismic.Predicates.at('document.type', 'product')
+  ]);
+
+   return {
+      props: {
+         recommendedProducts: (await recommendedProducts).results
+      }
+   }
+} 
