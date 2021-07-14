@@ -1,5 +1,6 @@
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 
 import { client } from "@/lib/prismic";
 import { Document } from  'prismic-javascript/types/documents'
@@ -25,7 +26,7 @@ export default function Product({ product }: IProductProps ) {
             {PrismicDOM.RichText.asText(product.data.title)}
          </h1>
 
-         <img src={product.data.thumbnail.url} width="300" alt={product.data.title} />
+         <Image src={product.data.thumbnail.url} width={400} height={400} alt={product.data.title} />
 
          {/* transforma texto em HTML */}
          <div dangerouslySetInnerHTML={{ __html: PrismicDOM.RichText.asText(product.data.description) }}></div>

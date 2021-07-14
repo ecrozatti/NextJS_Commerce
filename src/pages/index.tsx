@@ -12,9 +12,10 @@ import SEO from '@/components/SEO';
 
 interface IHomeProps {
   recommendedProducts: Document[];
+  categories: Document[];
 }
 
-export default function Home({ recommendedProducts }: IHomeProps) {
+export default function Home({ recommendedProducts, categories }: IHomeProps) {
   return (
     <DivPage>
       <SEO 
@@ -39,18 +40,40 @@ export default function Home({ recommendedProducts }: IHomeProps) {
             })}
           </ul>  
       </section>
+
+      <section>
+          <h1>Categories List</h1>
+          <ul>
+            {categories.map(category => {
+              return (
+                <li key={category.id}>
+                  <Link href={`/catalog/categories/${category.uid}`}>
+                     <a>
+                        {PrismicDOM.RichText.asText(category.data.title)}
+                     </a>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>  
+      </section>
     </DivPage>
   )
 }
 
 export const getServerSideProps: GetServerSideProps<IHomeProps> = async () => {
-  const recommendedProducts = await client().query([
-    Prismic.Predicates.at('document.type', 'product')
-  ]);
+	const recommendedProducts = await client().query([
+		Prismic.Predicates.at('document.type', 'product')
+	]);
+
+  	const categories = await client().query([
+      Prismic.Predicates.at('document.type', 'category')
+	]);
 
    return {
       props: {
-         recommendedProducts: recommendedProducts.results
+         recommendedProducts: recommendedProducts.results,
+			categories: categories.results
       }
    }
 } 

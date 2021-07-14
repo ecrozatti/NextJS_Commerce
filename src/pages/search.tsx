@@ -1,3 +1,5 @@
+import { FormEvent, useState } from 'react';
+
 import { GetServerSideProps } from 'next';
 import Link from 'next/link';
 
@@ -5,52 +7,63 @@ import { client } from '@/lib/prismic';
 import Prismic from 'prismic-javascript';
 import { Document } from 'prismic-javascript/types/documents';
 import PrismicDOM from 'prismic-dom';
+import { useRouter } from 'next/router';
 
-import { Title, DivPage, Button } from '@/styles/pages/Home';
-import SEO from '@/components/SEO';
-
-
-interface IHomeProps {
-  search: Document[];
+interface ISearchProps {
+   searchResults: Document[];
 }
 
-export default function Search({ search }: IHomeProps) {
-  return (
-    <DivPage>
-      <SEO 
-        title="NestJS-Commerce, your best e-commerce" 
-        image="image.png"
-        shouldExcludeTitleSuffix={false}
-      />
+export default function Search({ searchResults }: ISearchProps) {
+   const router = useRouter();
+   const [search, setSearch] = useState('');
 
-      <section>
-          <h1>Products List</h1>
-          <ul>
-            {search.map(recommendedProduct => {
+   function handleSearch(e: FormEvent) {
+      e.preventDefault();
+
+      router.push(`/search?q=${encodeURIComponent(search)}`);
+
+      setSearch('');
+   }
+
+  return (
+      <div>
+         <form onSubmit={handleSearch}>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} />
+            <button type="submit">Search</button>
+         </form>
+
+         <ul>
+            {searchResults.map(product => {
               return (
-                <li key={recommendedProduct.id}>
-                  <Link href={`/catalog/products/${recommendedProduct.uid}`}>
+                <li key={product.id}>
+                  <Link href={`/catalog/products/${product.uid}`}>
                      <a>
-                        {PrismicDOM.RichText.asText(recommendedProduct.data.title)}
+                        {PrismicDOM.RichText.asText(product.data.title)}
                      </a>
                   </Link>
                 </li>
               );
             })}
           </ul>  
-      </section>
-    </DivPage>
+      </div>
   )
 }
 
-export const getServerSideProps: GetServerSideProps<IHomeProps> = async () => {
-  const recommendedProducts = await client().query([
-    Prismic.Predicates.at('document.type', 'product')
-  ]);
+export const getServerSideProps: GetServerSideProps<ISearchProps> = async (context) => {
+   const { q } = context.query;
+
+   if (!q) {
+      return { props: { searchResults: [] } };
+   }
+
+   const searchResults = await client().query([
+      Prismic.Predicates.at('document.type', 'product'),
+      Prismic.Predicates.fulltext('my.product.title', String(q))
+   ]);
 
    return {
-      props: {
-         search: recommendedProducts.results
+      props: { 
+         searchResults: searchResults.results 
       }
    }
-} 
+};
